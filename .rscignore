@@ -1,0 +1,14 @@
+.Renviron
+.Rhistory
+.git
+.gitignore
+data-raw
+docs
+tests
+_targets.R
+_targets
+R/fct_fetch_real.R
+.github
+README.md
+DESCRIPTION
+NAMESPACE

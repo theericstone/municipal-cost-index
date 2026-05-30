@@ -1,0 +1,22 @@
+Package: mci
+Title: Massachusetts Core Services Municipal Cost Index
+Version: 0.1.0
+Authors@R: person("Brookline", "WA22", role = c("aut", "cre"))
+Description: A defensible, self-updating municipal cost index for Massachusetts,
+    per Brookline 2026 Town Meeting Warrant Article 22. A fixed-weight Laspeyres
+    input-price index plus an actual-expenditure reconciliation overlay. Data
+    manipulation uses data.table (no tidyverse).
+License: MIT
+Encoding: UTF-8
+Imports:
+    shiny,
+    bslib,
+    bsicons,
+    data.table,
+    reactable,
+    plotly
+Suggests:
+    jsonlite,
+    readxl,
+    targets,
+    testthat (>= 3.0.0)

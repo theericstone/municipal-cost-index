@@ -1,0 +1,39 @@
+# Self-updating data refresh. Weekly cron: fetch real public data (BLS QCEW/CPI/
+# PPI + FHWA NHCCI — all key-free), rebuild the cached snapshot, run tests, and
+# commit the refreshed inst/extdata/mci_snapshot.rds. The deployed app
+# (shinyapps.io) reads that committed snapshot, so it stays current with no
+# manual redeploy and never calls a live API in a user session.
+#
+# No API keys are required today (all sources are key-free). The per-run commit
+# also resets GitHub's 60-day scheduled-workflow dormancy clock.
+name: update-index
+on:
+  schedule:
+    - cron: "0 6 * * 1"        # Mondays 06:00 UTC
+  workflow_dispatch: {}         # manual trigger
+permissions:
+  contents: write
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: r-lib/actions/setup-r@v2
+      - name: Install packages
+        run: install.packages(c("data.table","jsonlite","testthat"))
+        shell: Rscript {0}
+      - name: Fetch real data & rebuild snapshot
+        run: source("data-raw/build_snapshot.R")
+        shell: Rscript {0}
+      - name: Run index tests
+        run: |
+          for (f in list.files("R", pattern="^fct_", full.names=TRUE)) source(f)
+          testthat::test_dir("tests/testthat", stop_on_failure=TRUE)
+        shell: Rscript {0}
+      - name: Commit refreshed snapshot
+        run: |
+          git config --local user.email "actions@github.com"
+          git config --local user.name "github-actions"
+          git add inst/extdata/mci_snapshot.rds
+          git commit -m "data: scheduled index refresh" || echo "no changes"
+          git push
