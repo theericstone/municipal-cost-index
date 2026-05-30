@@ -57,10 +57,21 @@ app_server <- function(base_snap) {
   }
 }
 
-#' Load the cached real snapshot if present, else fall back to sample data.
-#' The pipeline / GitHub Action writes inst/extdata/mci_snapshot.rds; the app
-#' only ever reads it (never calls a live API in a user session).
+#' Load the snapshot the app displays. Runs ONCE per process (not per session).
+#' Order: (1) the latest published snapshot from GitHub — refreshed weekly by the
+#' Actions pipeline, so the deployed app stays current with no redeploy; (2) the
+#' bundled copy as an offline fallback; (3) sample data as a last resort. The app
+#' never calls a live data API itself.
 load_snapshot <- function() {
+  remote <- "https://raw.githubusercontent.com/theericstone/municipal-cost-index/main/inst/extdata/mci_snapshot.rds"
+  snap <- tryCatch({
+    old <- options(timeout = 10); on.exit(options(old))
+    tf <- tempfile(fileext = ".rds")
+    utils::download.file(remote, tf, quiet = TRUE, mode = "wb")
+    readRDS(tf)
+  }, error = function(e) NULL)
+  if (!is.null(snap)) return(snap)
+
   path <- system.file("extdata", "mci_snapshot.rds", package = "mci")
   if (!nzchar(path)) path <- "inst/extdata/mci_snapshot.rds"
   if (file.exists(path)) readRDS(path) else build_sample_snapshot()
