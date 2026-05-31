@@ -59,7 +59,7 @@ mod_methodology_server <- function(id, snap) {
       reactable(
         w[, .(Component = component, Weight = w)],
         columns = list(Weight = colDef(format = colFormat(percent = TRUE, digits = 1))),
-        striped = TRUE, compact = TRUE)
+        striped = TRUE, compact = TRUE, pagination = FALSE)
     })
 
     output$source_tbl <- renderReactable({
