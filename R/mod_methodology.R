@@ -89,12 +89,8 @@ mod_methodology_server <- function(id, snap) {
       }
       s <- as.data.table(s)
       reactable(
-        s[, .(Component = component, `Live source` = source,
-              Proxy = ifelse(proxy, "proxy", ""))],
-        columns = list(
-          `Live source` = colDef(minWidth = 220),
-          Proxy = colDef(maxWidth = 70,
-            style = function(value) if (nzchar(value)) list(color = "#b9770e", fontWeight = "bold") else NULL)),
+        s[, .(Component = component, `Live source` = source)],
+        columns = list(`Live source` = colDef(minWidth = 220)),
         striped = TRUE, compact = TRUE, defaultPageSize = 12)
     })
 
