@@ -14,33 +14,45 @@ library(data.table)
 # ---- component -> real source spec ------------------------------------------
 # type: qcew | bls (single series) | blsmix (avg of several, each indexed) | nhcci
 .real_basket <- function() {
+  # weight basis: "Measured (…)" = anchored to real statewide data; else documented estimate.
   list(
-    list(component = "Wages & salaries",                    weight = 0.41, type = "qcew",
-         source = "BLS QCEW — MA local-government avg weekly wage"),
-    list(component = "Health & insurance benefits",         weight = 0.11, type = "bls",   id = "CUUR0000SAM",
-         source = "BLS CPI — medical care"),
-    list(component = "Retirement / pensions",               weight = 0.07, type = "qcew",  proxy = TRUE,
-         source = "PROXY: tracks local-gov wages (pension cost scales with payroll)"),
+    list(component = "Wages & salaries",                    weight = 0.40, type = "qcew",
+         source = "BLS QCEW — MA local-government avg weekly wage",
+         wbasis = "Measured — US Census (salaries 39.8%)"),
+    list(component = "Health & insurance benefits",         weight = 0.12, type = "bls",   id = "CUUR0000SAM",
+         source = "BLS CPI — medical care",
+         wbasis = "Measured — DLS Fixed Costs (net of pension)"),
+    list(component = "Retirement / pensions",               weight = 0.06, type = "qcew",  proxy = TRUE,
+         source = "PROXY: tracks local-gov wages (pension cost scales with payroll)",
+         wbasis = "Measured — US Census (pension trust 6%)"),
     list(component = "Special education (out-of-district)", weight = 0.05, type = "dese",  which = "sped",
          fallback_id = "CUUR0000SEEB",
          source = "DESE — statewide special-ed expenditure per pupil",
-         source_proxy = "PROXY: BLS CPI tuition (DESE file not found)"),
+         source_proxy = "PROXY: BLS CPI tuition (DESE file not found)",
+         wbasis = "Estimate (overlaps wages*)"),
     list(component = "Student transportation",              weight = 0.03, type = "dese",  which = "transp",
          fallback_id = "CUUR0000SETB01",
          source = "DESE — special-ed in/out-of-district transportation per pupil",
-         source_proxy = "PROXY: BLS CPI motor fuel (DESE file not found)"),
+         source_proxy = "PROXY: BLS CPI motor fuel (DESE file not found)",
+         wbasis = "Estimate (overlaps wages*)"),
     list(component = "Utilities & energy",                  weight = 0.06, type = "blsmix", ids = c("CUUR0000SEHF01","CUUR0000SEHF02"),
-         source = "BLS CPI — electricity + utility (piped) gas"),
+         source = "BLS CPI — electricity + utility (piped) gas",
+         wbasis = "Estimate (budget norms)"),
     list(component = "Roads & highway",                     weight = 0.06, type = "nhcci",
-         source = "FHWA National Highway Construction Cost Index"),
+         source = "FHWA National Highway Construction Cost Index",
+         wbasis = "Estimate (budget norms)"),
     list(component = "Facilities construction",             weight = 0.06, type = "bls",   id = "WPUIP2300001",
-         source = "BLS PPI — inputs to new nonresidential construction"),
+         source = "BLS PPI — inputs to new nonresidential construction",
+         wbasis = "Estimate (budget norms)"),
     list(component = "Vehicles & equipment",                weight = 0.03, type = "bls",   id = "CUUR0000SETA01",
-         source = "BLS CPI — new vehicles"),
+         source = "BLS CPI — new vehicles",
+         wbasis = "Estimate (budget norms)"),
     list(component = "Supplies & materials",                weight = 0.04, type = "bls",   id = "CUUR0000SAC",
-         source = "BLS CPI — commodities"),
-    list(component = "Contracted services",                 weight = 0.08, type = "bls",   id = "CUUR0000SAS",
-         source = "BLS CPI — services")
+         source = "BLS CPI — commodities",
+         wbasis = "Estimate (budget norms)"),
+    list(component = "Contracted services",                 weight = 0.09, type = "bls",   id = "CUUR0000SAS",
+         source = "BLS CPI — services",
+         wbasis = "Estimate (budget norms)")
   )
 }
 
@@ -241,7 +253,8 @@ build_real_snapshot <- function(startyear = 2015, endyear = 2024) {
     if (is.null(px) || !nrow(px)) stop("No data returned for: ", b$component)
     prices[[length(prices) + 1L]] <- px
     srcs[[length(srcs) + 1L]] <- data.table(component = b$component,
-                                            source = used_source, proxy = used_proxy)
+                                            source = used_source, proxy = used_proxy,
+                                            wbasis = if (is.null(b$wbasis)) "Estimate (budget norms)" else b$wbasis)
   }
   prices <- rbindlist(prices)
 

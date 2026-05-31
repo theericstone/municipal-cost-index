@@ -26,10 +26,12 @@ mod_methodology_ui <- function(id) {
       card_header("Basket & weights"),
       reactableOutput(ns("weights")),
       card_footer(class = "text-body-secondary small",
-        HTML("<b>Measured</b> = derived from real statewide data (the employee-benefits ",
-             "share is the DLS Schedule A “Fixed Costs” total; health/pension split estimated). ",
-             "<b>Estimate</b> = documented default from typical Massachusetts municipal budget ",
-             "composition (~75% personnel), pending object-level expenditure data."))
+        HTML("<b>Measured</b> = anchored to real statewide data: wages and pension to the ",
+             "US Census Survey of MA local-government finances (salaries 39.8%, pension trust 6%); ",
+             "the benefits total to DLS Schedule A “Fixed Costs” (~18%). <b>Estimate</b> = documented ",
+             "default from typical Massachusetts municipal budget composition, pending object-level ",
+             "data. <b>*</b> Special education and transportation are <i>programs</i>, not inputs, so ",
+             "their weight overlaps the wage line; kept separate to show the school cost drivers."))
     ),
     card(
       card_header("Live data source per component"),
@@ -61,9 +63,12 @@ mod_methodology_server <- function(id, snap) {
   moduleServer(id, function(input, output, session) {
     output$weights <- renderReactable({
       w <- normalize_weights(as.data.table(snap()$weights))[order(-w)]
-      anchored <- c("Health & insurance benefits", "Retirement / pensions")
-      w[, Basis := ifelse(component %in% anchored,
-                          "Measured (DLS Fixed Costs)", "Estimate (budget norms)")]
+      src <- as.data.table(snap()$sources)
+      if (!is.null(src) && "wbasis" %in% names(src)) {
+        w <- merge(w, src[, .(component, Basis = wbasis)], by = "component", all.x = TRUE)[order(-w)]
+      } else {
+        w[, Basis := "Estimate (budget norms)"]
+      }
       reactable(
         w[, .(Component = component, Weight = w, Basis = Basis)],
         columns = list(

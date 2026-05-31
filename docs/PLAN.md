@@ -124,16 +124,19 @@ employment mix constant (QCEW average pay carries some composition drift).
 
 ## 3. The basket — components → public price series
 
-**Weight provenance (honest status).** The **employee-benefits** weight (~18%) is anchored to
-the real statewide **DLS Schedule A "Fixed Costs"** share. The other weights remain **documented
-defaults** anchored on the ~75% personnel share and typical operating shares. *Why not all
-DLS-derived?* The basket is organized by **input** (wages, utilities, supplies, …) but DLS's
-all-351 reports are by **function** (education, public safety, …); only Fixed Costs is a clean
-input/object line. True input weights need **object-level** Schedule A line data, which DLS does
-not publish in any all-351 web report — and naïvely mixing DESE (all-funds) school totals with
-DLS (general-fund) totals yields wrong shares (scope mismatch). Proper object-level weight
-derivation is a Phase-4 analytical task. The "Series (as built)" column is what the shipped
-pipeline fetches today — all public, reproducible, and (except the optional BLS key) key-free.
+**Weight provenance (honest status).** Three weights are **measured** from real statewide data:
+**wages (~40%)** and **pensions (~6%)** from the US Census Survey of MA local-government finances
+(salaries memo 39.8%; insurance-trust/pension 6%, FY2021), and the **employee-benefits total
+(~18%)** from DLS Schedule A "Fixed Costs" (so health ≈ benefits − pension). The remaining weights
+(utilities, roads, facilities, vehicles, supplies, services, SPED, transport) are **documented
+defaults** anchored on typical operating shares. *Why not all measured?* No public source splits
+municipal "current operations" finely enough (Census stops at current-ops vs. capital + a salaries
+memo; DLS web reports are by function; CTHRU is state spending). Full object-level weights need
+DLS Schedule A line data on request — a Phase-4 task. **Note on SPED/transport:** these are
+*programs*, not inputs, so their cost already includes wages counted in the wage line; they are
+kept as separate components (with a documented overlap caveat) to keep the school cost drivers
+visible. The "Series (as built)" column is what the shipped pipeline fetches today — all public
+and reproducible.
 
 | Article 22 component | Sub-component | Series (as built) | Source | Weight |
 |---|---|---|---|---|
