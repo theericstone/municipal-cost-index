@@ -42,23 +42,27 @@ mod_map_server <- function(id, snap) {
       m <- as.data.table(m)[, key := toupper(trimws(muni))]
       g <- merge(geo(), m[, .(key, muni, growth_pct, gap_pts)], by = "key", all.x = TRUE)
 
-      rng <- max(abs(g$gap_pts), na.rm = TRUE)
-      pal <- colorNumeric("RdBu", domain = c(-rng, rng), reverse = TRUE, na.color = "#eeeeee")
+      # Cap the color scale at +/-40 pts so a couple of extreme-outlier towns don't
+      # wash out the shading for everyone else (true value still shown on hover).
+      cap <- 40
+      g$gap_capped <- pmax(pmin(g$gap_pts, cap), -cap)
+      pal <- colorNumeric("RdBu", domain = c(-cap, cap), reverse = TRUE, na.color = "#eeeeee")
       labels <- sprintf(
         "<b>%s</b><br>Spending growth: %s<br>Gap vs MCI: %s pts",
         ifelse(is.na(g$muni), as.character(g$TOWN), g$muni),
         ifelse(is.na(g$growth_pct), "n/a", sprintf("%+.0f%%", g$growth_pct)),
         ifelse(is.na(g$gap_pts), "n/a", sprintf("%+.1f", g$gap_pts)))
 
-      leaflet(g) |>
+      bb <- as.numeric(sf::st_bbox(g))   # xmin, ymin, xmax, ymax
+      leaflet(g, options = leafletOptions(zoomSnap = 0.25)) |>
         addProviderTiles(providers$CartoDB.Positron) |>
-        setView(lng = -71.8, lat = 42.1, zoom = 8) |>
+        fitBounds(bb[1], bb[2], bb[3], bb[4]) |>
         addPolygons(
-          fillColor = pal(g$gap_pts), weight = 0.5, color = "white", fillOpacity = 0.82,
+          fillColor = pal(g$gap_capped), weight = 0.5, color = "white", fillOpacity = 0.85,
           label = lapply(labels, htmltools::HTML),
           highlightOptions = highlightOptions(weight = 2, color = "#333", bringToFront = TRUE)) |>
-        addLegend("bottomright", pal = pal, values = g$gap_pts,
-                  title = "Spending vs MCI (pts)", opacity = 0.9)
+        addLegend("bottomright", pal = pal, values = c(-cap, cap),
+                  title = "Spending vs MCI<br>(pts, capped ±40)", opacity = 0.9)
     })
   })
 }

@@ -12,7 +12,7 @@ mod_methodology_ui <- function(id) {
         h5("Fixed-weight Laspeyres index of price relatives"),
         withMathJax(p("$$\\text{MCI}_t = 100 \\times \\sum_i w_i \\left(\\frac{P_{i,t}}{P_{i,0}}\\right)$$")),
         tags$ul(
-          tags$li(strong("w"), HTML(" &mdash; each component's fixed share of the municipal budget (from DLS Schedule A); shares sum to 1.")),
+          tags$li(strong("w"), HTML(" &mdash; each component's fixed share of the municipal budget; shares sum to 1. The employee-benefits share is anchored to DLS Schedule A statewide (Fixed Costs &asymp; 18%); the remaining shares are documented defaults pending object-level expenditure data.")),
           tags$li(HTML("<strong>P<sub>i,t</sub> / P<sub>i,0</sub></strong> &mdash; the component's public price series, relative to the base year.")),
           tags$li(strong("Base year"), " — a recent, non-anomalous year set to 100.")
         ),

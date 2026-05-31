@@ -124,10 +124,16 @@ employment mix constant (QCEW average pay carries some composition drift).
 
 ## 3. The basket — components → public price series
 
-Weights below are **illustrative defaults** anchored on the ~75% personnel share and typical
-municipal operating shares. **They must be replaced with weights computed from MA DLS
-Schedule A before publication.** The "Series (as built)" column is what the shipped pipeline
-fetches today — all public, reproducible, and (except the optional BLS key) key-free.
+**Weight provenance (honest status).** The **employee-benefits** weight (~18%) is anchored to
+the real statewide **DLS Schedule A "Fixed Costs"** share. The other weights remain **documented
+defaults** anchored on the ~75% personnel share and typical operating shares. *Why not all
+DLS-derived?* The basket is organized by **input** (wages, utilities, supplies, …) but DLS's
+all-351 reports are by **function** (education, public safety, …); only Fixed Costs is a clean
+input/object line. True input weights need **object-level** Schedule A line data, which DLS does
+not publish in any all-351 web report — and naïvely mixing DESE (all-funds) school totals with
+DLS (general-fund) totals yields wrong shares (scope mismatch). Proper object-level weight
+derivation is a Phase-4 analytical task. The "Series (as built)" column is what the shipped
+pipeline fetches today — all public, reproducible, and (except the optional BLS key) key-free.
 
 | Article 22 component | Sub-component | Series (as built) | Source | Weight |
 |---|---|---|---|---|
@@ -294,8 +300,9 @@ transportation per-pupil series (real, replacing CPI proxies); **Prop 2½ overri
 on the Overview tab (statewide, by year — the squeeze made visible).
 **Phase 3 — All-351 expenditure layer + map.** ✅ DONE. DLS **Schedule A** downloader (all 351,
 2 fiscal years) → per-municipality spending-growth-vs-MCI; **MassGIS** choropleth (`mod_map`,
-349/351 joined). *Remaining within this phase:* derive **real expenditure-share weights** from
-DLS object-level data (weights are still documented defaults).
+349/351 joined). Benefits weight anchored to real DLS Fixed Costs (~18%). *Remaining:* full
+**object-level** expenditure-share weights (Phase 4 — needs raw Schedule A line data, not in the
+all-351 web reports).
 **Phase 4 — Hardening & governance.** Real DLS weights; ECI/EIA/ENR precision upgrades; `renv`
 lock + `targets` + `pins` + `golem`; sensitivity tab; independent review; MAPC/MMA/Collins
 engagement; governance home.

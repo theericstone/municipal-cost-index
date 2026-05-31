@@ -15,11 +15,11 @@ library(data.table)
 # type: qcew | bls (single series) | blsmix (avg of several, each indexed) | nhcci
 .real_basket <- function() {
   list(
-    list(component = "Wages & salaries",                    weight = 0.37, type = "qcew",
+    list(component = "Wages & salaries",                    weight = 0.41, type = "qcew",
          source = "BLS QCEW — MA local-government avg weekly wage"),
-    list(component = "Health & insurance benefits",         weight = 0.13, type = "bls",   id = "CUUR0000SAM",
+    list(component = "Health & insurance benefits",         weight = 0.11, type = "bls",   id = "CUUR0000SAM",
          source = "BLS CPI — medical care"),
-    list(component = "Retirement / pensions",               weight = 0.09, type = "qcew",  proxy = TRUE,
+    list(component = "Retirement / pensions",               weight = 0.07, type = "qcew",  proxy = TRUE,
          source = "PROXY: tracks local-gov wages (pension cost scales with payroll)"),
     list(component = "Special education (out-of-district)", weight = 0.05, type = "dese",  which = "sped",
          fallback_id = "CUUR0000SEEB",
