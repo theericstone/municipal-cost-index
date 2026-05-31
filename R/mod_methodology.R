@@ -24,7 +24,12 @@ mod_methodology_ui <- function(id) {
     ),
     card(
       card_header("Basket & weights"),
-      reactableOutput(ns("weights"))
+      reactableOutput(ns("weights")),
+      card_footer(class = "text-body-secondary small",
+        HTML("<b>Measured</b> = derived from real statewide data (the employee-benefits ",
+             "share is the DLS Schedule A “Fixed Costs” total; health/pension split estimated). ",
+             "<b>Estimate</b> = documented default from typical Massachusetts municipal budget ",
+             "composition (~75% personnel), pending object-level expenditure data."))
     ),
     card(
       card_header("Live data source per component"),
@@ -56,9 +61,17 @@ mod_methodology_server <- function(id, snap) {
   moduleServer(id, function(input, output, session) {
     output$weights <- renderReactable({
       w <- normalize_weights(as.data.table(snap()$weights))[order(-w)]
+      anchored <- c("Health & insurance benefits", "Retirement / pensions")
+      w[, Basis := ifelse(component %in% anchored,
+                          "Measured (DLS Fixed Costs)", "Estimate (budget norms)")]
       reactable(
-        w[, .(Component = component, Weight = w)],
-        columns = list(Weight = colDef(format = colFormat(percent = TRUE, digits = 1))),
+        w[, .(Component = component, Weight = w, Basis = Basis)],
+        columns = list(
+          Weight = colDef(format = colFormat(percent = TRUE, digits = 1), maxWidth = 90),
+          Basis = colDef(style = function(value) {
+            if (grepl("Measured", value)) list(color = "#1e7e34", fontWeight = "bold")
+            else list(color = "#6c757d")
+          })),
         striped = TRUE, compact = TRUE, pagination = FALSE)
     })
 
