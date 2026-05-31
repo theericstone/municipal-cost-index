@@ -5,7 +5,7 @@
 
 ---
 
-## 0. The mandate (what Article 22 actually asks for)
+## 0. What Article 22 asks for
 
 Article 22 began as a resolution urging the state to modernize Proposition 2½ and was
 amended — after Advisory Committee discussion (returned to subcommittee, then adopted
@@ -24,7 +24,7 @@ sway the state legislature." A **regional or statewide "representative basket of
 communities"** is required. Coordinate with **MAPC**; enlist **MMA** and the **Collins
 Center** (UMass Boston).
 
-### Design goals (from the user + the article)
+### Design goals
 1. **Defensible** — reproducible from public data; no black-box weights.
 2. **Reflects municipal operational costs** — purpose-built basket, not CPI.
 3. **Easily explainable** — a lay reader, a skeptic, and a legislator each understand it.
@@ -37,10 +37,9 @@ Center** (UMass Boston).
 
 ---
 
-## 1. What we are building (and what we are deliberately not)
+## 1. What we are building
 
-**The article conflates two different measures.** We separate them, with the user's
-direction (input-price index first, expenditure reconciliation as a second layer):
+**The article conflates two different measures.** We separate them, with emphasis on input-price index first, expenditure reconciliation as a second layer used for validation/observation:
 
 ### Layer A — the headline Municipal Cost Index (input-price index)
 A CPI-style index that tracks the **price** of a **fixed basket of municipal inputs** over

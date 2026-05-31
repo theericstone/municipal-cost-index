@@ -103,14 +103,6 @@ mod_overview_server <- function(id, snap) {
     })
     output$cap_gap <- renderText(sprintf("cumulative vs. 2.5%%/yr since %d", base()))
 
-    # shared x range so the index chart and the override bars line up
-    xrange <- reactive({
-      yrs <- refs()$year
-      o <- snap()$overrides
-      if (!is.null(o)) yrs <- c(yrs, as.data.table(o)$year)
-      c(min(yrs) - 0.5, max(yrs) + 0.5)
-    })
-
     output$plot <- renderPlotly({
       d <- as.data.frame(refs())
       plot_ly(x = d$year, y = d$mci, type = "scatter", mode = "lines",
@@ -121,7 +113,7 @@ mod_overview_server <- function(id, snap) {
                   line = list(dash = "dot", color = "#7f8c8d")) |>
         layout(
           yaxis = list(title = sprintf("Index (%d = 100)", snap()$base_year)),
-          xaxis = list(title = "", range = xrange()),
+          xaxis = list(title = "", dtick = 2),
           legend = list(orientation = "h", y = -0.15),
           hovermode = "x unified")
     })
@@ -138,9 +130,8 @@ mod_overview_server <- function(id, snap) {
                  marker = list(color = "#b0b7bd")) |>
         layout(barmode = "stack",
                yaxis = list(title = "Override votes"),
-               xaxis = list(title = "", range = xrange()),
-               legend = list(orientation = "h", y = -0.2),
-               hovermode = "x unified")
+               xaxis = list(title = "", dtick = 2),
+               legend = list(orientation = "h", y = -0.2))
     })
   })
 }
