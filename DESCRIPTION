@@ -14,7 +14,10 @@ Imports:
     bsicons,
     data.table,
     reactable,
-    plotly
+    plotly,
+    leaflet,
+    sf,
+    htmltools
 Suggests:
     jsonlite,
     readxl,

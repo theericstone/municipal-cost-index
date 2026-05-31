@@ -149,6 +149,50 @@ library(data.table)
   s[, .(component = label, year = FY, level = get(col))][order(year)]
 }
 
+#' Statewide Proposition 2½ override votes by year (locally-supplied DLS file),
+#' split passed/failed. Returns NULL if the file is absent.
+.fetch_overrides <- function(min_year = 2015, max_year = 2027) {
+  f <- "data-raw/OverrideUnderrideVotes.xlsx"
+  if (!file.exists(f) || !requireNamespace("readxl", quietly = TRUE)) return(NULL)
+  d <- as.data.table(readxl::read_excel(f))
+  setnames(d, make.names(names(d)))
+  d <- d[grepl("Override", Vote.Type, ignore.case = TRUE)]
+  d[, year := suppressWarnings(as.integer(Fiscal.Year))]
+  d <- d[!is.na(year) & year >= min_year & year <= max_year]
+  agg <- d[, .(passed = sum(grepl("WIN",  Win...Loss, ignore.case = TRUE)),
+               failed = sum(grepl("LOSS", Win...Loss, ignore.case = TRUE))), by = year]
+  agg[, total := passed + failed]
+  agg[order(year)]
+}
+
+#' DLS Schedule A general-fund total expenditures for one fiscal year, all 351
+#' municipalities. Lives on dls-gw.dor.state.ma.us (a 302 -> session download),
+#' so: browser UA + follow redirects + cookie jar.
+.dls_schedule_a <- function(year) {
+  if (!requireNamespace("readxl", quietly = TRUE)) return(NULL)
+  url <- sprintf(paste0("https://dls-gw.dor.state.ma.us/reports/rdPage.aspx?",
+                        "rdReport=ScheduleA.GeneralFund&islAmountType=Expenditures&islYear=%d",
+                        "&rdReportFormat=NativeExcel&rdExportTableID=xtGenFund&rdExcelOutputFormat=Excel2007"),
+                 year)
+  jar <- tempfile(); tf <- tempfile(fileext = ".xlsx")
+  ua <- "Mozilla/5.0 AppleWebKit/537.36 Chrome/124 Safari/537.36"
+  system2("curl", shQuote(c("-s", "--max-time", "120", "-L", "-c", jar, "-b", jar,
+                            "-A", ua, "-o", tf, url)))
+  d <- tryCatch(as.data.table(readxl::read_excel(tf)), error = function(e) NULL)
+  if (is.null(d) || !nrow(d) || !"Total Expenditures" %in% names(d)) return(NULL)
+  d[, .(dor = `DOR Code`, muni = Municipality, total = `Total Expenditures`)]
+}
+
+#' Per-municipality operating-spending growth between two fiscal years (all 351).
+.fetch_dls_growth <- function(base_year, latest_year) {
+  a <- .dls_schedule_a(base_year); b <- .dls_schedule_a(latest_year)
+  if (is.null(a) || is.null(b)) return(NULL)
+  m <- merge(a[, .(dor, muni, t0 = as.numeric(total))],
+             b[, .(dor, t1 = as.numeric(total))], by = "dor")
+  m <- m[!is.na(t0) & t0 > 0 & !is.na(t1)]
+  m[, .(dor, muni, growth = t1 / t0 - 1)]
+}
+
 #' FHWA NHCCI (Socrata, no key) -> annual road construction cost level.
 .fetch_nhcci <- function(label) {
   url <- "https://data.transportation.gov/resource/r94d-n4f9.json?$limit=50000"
@@ -216,6 +260,14 @@ build_real_snapshot <- function(startyear = 2015, endyear = 2024) {
   # headline CPI (raw level) for the comparison line; re-anchored to the chosen base in the UI
   reference <- bls_all[seriesID == "CUUR0000SA0" & year %in% common, .(year, cpi = value)][order(year)]
 
+  # per-municipality spending growth vs the index growth, full period (for the map)
+  latest_y <- max(common)
+  mci_growth <- mci[year == latest_y, mci] / 100 - 1
+  dls <- .fetch_dls_growth(base_year, latest_y)
+  munis <- if (!is.null(dls)) dls[, .(dor, muni,
+                                      growth_pct = 100 * growth,
+                                      gap_pts = 100 * (growth - mci_growth))] else NULL
+
   list(
     base_year  = base_year,
     prices     = prices,
@@ -224,6 +276,9 @@ build_real_snapshot <- function(startyear = 2015, endyear = 2024) {
     mci        = mci,
     components = mci_components(prices, weights, base_year),
     reference  = reference,
+    overrides  = .fetch_overrides(),
+    munis      = munis,
+    mci_growth_pct = 100 * mci_growth,
     provenance = list(
       kind = paste0("Public price data: BLS QCEW/CPI/PPI, FHWA NHCCI, MA DESE (",
                     min(common), "–", max(common), ")"),

@@ -8,6 +8,7 @@ tests
 _targets.R
 _targets
 R/fct_fetch_real.R
+inst/extdata/mci_snapshot.rds
 .github
 README.md
 DESCRIPTION

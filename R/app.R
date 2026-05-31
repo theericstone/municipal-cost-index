@@ -36,6 +36,7 @@ app_ui <- function(years = 2015:2025, base_default = 2015, banner = NULL) {
     ),
     nav_panel("Overview",     mod_overview_ui("overview")),
     nav_panel("Components",   mod_components_ui("components")),
+    nav_panel("Map",          mod_map_ui("map")),
     nav_panel("Methodology",  mod_methodology_ui("methodology")),
     nav_spacer(),
     nav_item(tags$a("Source on GitHub", href = "https://github.com/theericstone/municipal-cost-index",
@@ -53,6 +54,7 @@ app_server <- function(base_snap) {
     })
     mod_overview_server("overview", snap)
     mod_components_server("components", snap)
+    mod_map_server("map", snap)
     mod_methodology_server("methodology", snap)
   }
 }
@@ -63,6 +65,12 @@ app_server <- function(base_snap) {
 #' bundled copy as an offline fallback; (3) sample data as a last resort. The app
 #' never calls a live data API itself.
 load_snapshot <- function() {
+  # 1) local file — present during development (fresh from data-raw/build_snapshot.R)
+  #    and EXCLUDED from the shinyapps bundle via .rscignore, so the deployed app
+  #    skips this and uses the remote (auto-updating) copy.
+  if (file.exists("inst/extdata/mci_snapshot.rds")) return(readRDS("inst/extdata/mci_snapshot.rds"))
+
+  # 2) latest published snapshot from GitHub — refreshed weekly by the pipeline
   remote <- "https://raw.githubusercontent.com/theericstone/municipal-cost-index/main/inst/extdata/mci_snapshot.rds"
   snap <- tryCatch({
     old <- options(timeout = 10); on.exit(options(old))
@@ -72,9 +80,8 @@ load_snapshot <- function() {
   }, error = function(e) NULL)
   if (!is.null(snap)) return(snap)
 
-  path <- system.file("extdata", "mci_snapshot.rds", package = "mci")
-  if (!nzchar(path)) path <- "inst/extdata/mci_snapshot.rds"
-  if (file.exists(path)) readRDS(path) else build_sample_snapshot()
+  # 3) last resort
+  build_sample_snapshot()
 }
 
 #' Launch the app. Defaults to the cached real snapshot when available.

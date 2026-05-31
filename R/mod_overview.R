@@ -37,13 +37,24 @@ mod_overview_ui <- function(id) {
       mci_kpi(ns("vb_cagr"),  "Avg. annual growth",     "calendar3",           "secondary", ns("cap_cagr")),
       mci_kpi(ns("vb_gap"),   "Gap vs 2.5% cap",        "exclamation-triangle","warning",   ns("cap_gap"))
     ),
-    card(
-      card_header("Municipal Cost Index vs. the Proposition 2.5% nominal levy cap"),
-      plotlyOutput(ns("plot"), height = "460px"),
-      card_footer(class = "text-body-secondary small",
-        "Blue = measured cost of the basket. Red dashed = the 2.5%/yr the levy cap ",
-        "allows. Grey dotted = general CPI for context. The widening gap between blue ",
-        "and red is the structural pressure Warrant Article 22 asks the state to weigh.")
+    layout_columns(
+      col_widths = c(7, 5),
+      card(
+        card_header("Municipal Cost Index vs. the Proposition 2.5% nominal levy cap"),
+        plotlyOutput(ns("plot"), height = "400px"),
+        card_footer(class = "text-body-secondary small",
+          "Blue = measured cost of the basket. Red dashed = the 2.5%/yr the levy cap ",
+          "allows. Grey dotted = general CPI. The widening blue-vs-red gap is the ",
+          "structural pressure Warrant Article 22 asks the state to weigh.")
+      ),
+      card(
+        card_header("Proposition 2½ override votes statewide, by year"),
+        plotlyOutput(ns("overrides"), height = "400px"),
+        card_footer(class = "text-body-secondary small",
+          "Municipal operating-override attempts (green passed, grey failed). ",
+          "Override activity tends to climb as service costs outrun the levy cap — ",
+          "in years of rising pressure and the years just after.")
+      )
     )
   )
 }
@@ -92,20 +103,44 @@ mod_overview_server <- function(id, snap) {
     })
     output$cap_gap <- renderText(sprintf("cumulative vs. 2.5%%/yr since %d", base()))
 
+    # shared x range so the index chart and the override bars line up
+    xrange <- reactive({
+      yrs <- refs()$year
+      o <- snap()$overrides
+      if (!is.null(o)) yrs <- c(yrs, as.data.table(o)$year)
+      c(min(yrs) - 0.5, max(yrs) + 0.5)
+    })
+
     output$plot <- renderPlotly({
-      d <- refs()
-      plot_ly(d, x = ~year) |>
-        add_lines(y = ~mci, name = "Municipal Cost Index",
-                  line = list(width = 4, color = "#1f4e79")) |>
-        add_lines(y = ~cap, name = "Prop 2½ cap (2.5%/yr)",
+      d <- as.data.frame(refs())
+      plot_ly(x = d$year, y = d$mci, type = "scatter", mode = "lines",
+              name = "Municipal Cost Index", line = list(width = 4, color = "#1f4e79")) |>
+        add_lines(x = d$year, y = d$cap, name = "Prop 2½ cap (2.5%/yr)",
                   line = list(dash = "dash", color = "#c0392b")) |>
-        add_lines(y = ~cpi, name = "CPI (all items)",
+        add_lines(x = d$year, y = d$cpi, name = "CPI (all items)",
                   line = list(dash = "dot", color = "#7f8c8d")) |>
         layout(
           yaxis = list(title = sprintf("Index (%d = 100)", snap()$base_year)),
-          xaxis = list(title = ""),
+          xaxis = list(title = "", range = xrange()),
           legend = list(orientation = "h", y = -0.15),
           hovermode = "x unified")
+    })
+
+    output$overrides <- renderPlotly({
+      o <- snap()$overrides
+      validate(need(!is.null(o) && nrow(as.data.table(o)) > 0 &&
+                    all(c("year", "passed", "failed") %in% names(as.data.table(o))),
+                    "Override data not available in this snapshot."))
+      o <- as.data.frame(o)
+      plot_ly(x = o$year, y = o$passed, type = "bar", name = "Passed",
+              marker = list(color = "#1f7a4d")) |>
+        add_bars(x = o$year, y = o$failed, name = "Failed",
+                 marker = list(color = "#b0b7bd")) |>
+        layout(barmode = "stack",
+               yaxis = list(title = "Override votes"),
+               xaxis = list(title = "", range = xrange()),
+               legend = list(orientation = "h", y = -0.2),
+               hovermode = "x unified")
     })
   })
 }
