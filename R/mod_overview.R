@@ -113,8 +113,9 @@ mod_overview_server <- function(id, snap) {
                   line = list(dash = "dot", color = "#7f8c8d")) |>
         layout(
           yaxis = list(title = sprintf("Index (%d = 100)", snap()$base_year)),
-          xaxis = list(title = "", dtick = 2),
-          legend = list(orientation = "h", y = -0.15),
+          xaxis = list(title = "", dtick = 2, automargin = TRUE),
+          legend = list(orientation = "h", y = -0.22, yanchor = "top"),
+          margin = list(b = 80, t = 10),
           hovermode = "x unified")
     })
 
@@ -131,8 +132,9 @@ mod_overview_server <- function(id, snap) {
                  marker = list(color = "#b0b7bd")) |>
         layout(barmode = "stack",
                yaxis = list(title = "Override votes"),
-               xaxis = list(title = "", dtick = 2),
-               legend = list(orientation = "h", y = -0.2))
+               xaxis = list(title = "", dtick = 2, automargin = TRUE),
+               legend = list(orientation = "h", y = -0.22, yanchor = "top"),
+               margin = list(b = 80, t = 10))
     })
   })
 }

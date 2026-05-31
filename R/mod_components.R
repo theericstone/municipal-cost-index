@@ -68,8 +68,9 @@ mod_components_server <- function(id, snap) {
                   line = list(width = 5, color = "black"),
                   hovertemplate = "MCI: %{y:.0f}<extra></extra>") |>
         layout(yaxis = list(title = sprintf("Price index (%d = 100)", by())),
-               xaxis = list(title = ""),
-               legend = list(orientation = "h", y = -0.18, font = list(size = 10)),
+               xaxis = list(title = "", automargin = TRUE),
+               legend = list(orientation = "h", y = -0.2, yanchor = "top", font = list(size = 10)),
+               margin = list(b = 110, t = 10),
                hovermode = "x unified")
     })
 
