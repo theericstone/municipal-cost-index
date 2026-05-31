@@ -94,8 +94,27 @@ report-file URLs interactively before wiring the scheduler — they are not guar
 - **PERAC** pensions: PDF actuarial/annual reports for 104 systems.
   https://www.mass.gov/info-details/perac-reports-studies-and-retirement-system-analyses
 
-## Minimal viable data stack
+## As-built data stack (shipped)
+The shipped pipeline (`R/fct_fetch_real.R`, `data-raw/build_snapshot.R`) is **key-free** —
+one optional free `BLS_KEY` only raises rate limits:
+- **Wages** → BLS **QCEW** MA local-government average weekly wage (open-data CSV).
+- **Benefits & other prices** → BLS **CPI/PPI public API** in one batched POST: medical care
+  (`CUUR0000SAM`), electricity+gas (`SEHF01`/`SEHF02`), construction inputs (`WPUIP2300001`),
+  new vehicles (`SETA01`), commodities (`SAC`), services (`SAS`), and headline CPI
+  (`CUUR0000SA0`, reference line).
+- **Schools** → MA **DESE** RADAR special-ed + per-pupil files (committed under `data-raw/`).
+- **Roads** → FHWA **NHCCI** Socrata JSON.
+- **All-351 actuals** → MA DLS **Schedule A** via `dls-gw.dor.state.ma.us` (UA + follow-redirect
+  + cookie jar).
+- **Boundaries** → MassGIS Municipalities FeatureServer → simplified bundled GeoJSON
+  (`data-raw/build_geo.R`).
+
+Network calls use base R `system2`/`curl` + `jsonlite` + `data.table`/`readxl`/`sf` — no
+`fredr`/`eia`/`RSocrata`/`httr2` dependency. *Planned precision upgrades (drop-in):* FRED ECI–
+State&Local for compensation; EIA for MA energy; DESE OOD tuition rates; ENR/RSMeans facilities.
+
+## Original "minimal viable stack" (API-centric alternative)
 FRED (`fredr`) as the national hub (ECI/CPI/BEA) + `eia` (MA energy) + NHCCI Socrata
 (`RSocrata`/`httr2`) + QCEW CSV (county wages) + DLS Databank Excel downloader (all-351
-actuals) + MassGIS `TOWNSSURVEY_POLYM` (boundaries). Keys live in `.Renviron` locally and
-GitHub Actions secrets in CI; all clients read `Sys.getenv()` so the same code runs in both.
+actuals) + MassGIS boundaries. Retained here as the reference design; the shipped build above
+chose the key-free route instead.

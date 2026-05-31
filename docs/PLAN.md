@@ -87,7 +87,8 @@ MCI_t = 100 × Σ_i  w_i × (P_i,t / P_i,0)
 ```
 
 - `w_i` — fixed expenditure-share weight of component *i* in the base-year MA municipal
-  budget (Σ w_i = 1), derived from **DLS Schedule A**.
+  budget (Σ w_i = 1). *Target:* derive from DLS Schedule A. *Current build:* documented
+  default shares anchored on typical municipal budget composition (see §3).
 - `P_i,t / P_i,0` — the price relative for component *i*, its underlying public price series
   indexed to the base year.
 
@@ -95,7 +96,7 @@ MCI_t = 100 × Σ_i  w_i × (P_i,t / P_i,0)
 substitution bias, passes time/factor-reversal tests; used by BEA and FHWA NHCCI). But its
 whole-index transparency cost is fatal for *this* project: a fixed basket is intuitive ("the
 same shopping list, repriced each year"), reproducible, and resistant to "you tweaked the
-weights to get the answer you wanted." This matches the strongest sector precedents — the CPI,
+weights to get the answer you wanted" arguments. This matches the strongest sector precedents — the CPI,
 the BLS ECI, the Higher Education Price Index (HEPI), and especially the **Illinois Municipal
 Price Index** (our closest analogue: a public, documented, expenditure-share-weighted
 Laspeyres index built from real municipal budgets, maintained by an independent university
@@ -113,8 +114,11 @@ is already Fisher-based.
 ### 2.3 The "personnel ≈ 75%" load-bearing fact
 Roughly three-quarters of municipal spending is personnel. This is *why* a bespoke index is
 justified (households and businesses are far less labor-intensive, so CPI/PPI systematically
-**understate** municipal cost growth) and why the **BLS Employment Cost Index — State & Local
-Government** series is the single most important building block.
+**understate** municipal cost growth) and why the local-government compensation series is the
+single most important building block. *Current build:* **BLS QCEW** — Massachusetts
+local-government average weekly wage (real, statewide, key-free). *Planned refinement:* the
+**BLS Employment Cost Index — State & Local Government**, a purer price measure that holds
+employment mix constant (QCEW average pay carries some composition drift).
 
 ---
 
@@ -122,22 +126,31 @@ Government** series is the single most important building block.
 
 Weights below are **illustrative defaults** anchored on the ~75% personnel share and typical
 municipal operating shares. **They must be replaced with weights computed from MA DLS
-Schedule A before publication.** The mapping uses only public, reproducible series.
+Schedule A before publication.** The "Series (as built)" column is what the shipped pipeline
+fetches today — all public, reproducible, and (except the optional BLS key) key-free.
 
-| Article 22 component | Sub-component | Price series (relative) | Source | Rough weight |
+| Article 22 component | Sub-component | Series (as built) | Source | Weight |
 |---|---|---|---|---|
-| **Employee compensation** | Wages & salaries (incl. teachers) | ECI — State & local govt, wages (`ECIGVTWAG`) | FRED/BLS | ~37% |
-| | Health & insurance benefits | ECI — S&L govt, benefits (`ECIGVTBEN`); cross-check MA GIC | FRED/BLS | ~13% |
-| | Retirement / pensions / OPEB | ECI — S&L retirement component; PERAC actuarial (context) | FRED/BLS | ~9% |
-| **Schools** | Special education (out-of-district tuition) | MA DESE per-pupil & OOD tuition rates (all districts); state OOD price-setting | DESE | ~5% |
-| | Student transportation | MA DESE transportation expenditure; PPI/CPI transport + diesel | DESE / BLS | ~3% |
-| **Utilities** | Electricity, gas, fuel | EIA MA retail electricity & natural gas; CPI utilities; PPI diesel | EIA / BLS | ~6% |
-| **Capital — roads** | Road/highway repair | National Highway Construction Cost Index (NHCCI), Fisher | FHWA (Socrata) | ~6% |
-| **Capital — facilities** | Building construction | PPI construction inputs (public); ENR BCI / RSMeans if licensed | BLS | ~6% |
-| **Other significant** | Vehicles & equipment | PPI — motor vehicles / heavy equipment | BLS | ~3% |
-| | Supplies & materials | PPI — office supplies, industrial commodities | BLS | ~4% |
-| | Contracted/professional services | CPI/PPI services; ECI services proxy | BLS | ~8% |
+| **Employee compensation** | Wages & salaries (incl. teachers) | MA local-government avg weekly wage | BLS QCEW | ~37% |
+| | Health & insurance benefits | CPI — medical care (`CUUR0000SAM`) | BLS | ~13% |
+| | Retirement / pensions / OPEB | *proxy:* tracks local-gov wages | BLS QCEW (proxy) | ~9% |
+| **Schools** | Special education (out-of-district) | statewide special-ed expenditure per pupil | MA DESE | ~5% |
+| | Student transportation | special-ed in/out-of-district transport per pupil | MA DESE | ~3% |
+| **Utilities** | Electricity, gas | CPI — electricity + utility gas (`SEHF01`/`SEHF02`) | BLS | ~6% |
+| **Capital — roads** | Road/highway repair | National Highway Construction Cost Index (Fisher) | FHWA (Socrata) | ~6% |
+| **Capital — facilities** | Building construction | PPI — inputs to nonres. construction (`WPUIP2300001`) | BLS | ~6% |
+| **Other significant** | Vehicles & equipment | CPI — new vehicles (`SETA01`) | BLS | ~3% |
+| | Supplies & materials | CPI — commodities (`SAC`) | BLS | ~4% |
+| | Contracted/professional services | CPI — services (`SAS`) | BLS | ~8% |
 | **Total** | | | | **100%** |
+
+The headline **CPI all-items** (`CUUR0000SA0`) is also fetched, as the reference comparison
+line on the Overview chart (not part of the basket). **Planned upgrades** (all swap in without
+changing the formula): BLS **ECI–State & Local** for compensation (purer price measure); **EIA**
+MA electricity/gas for utilities; **DESE out-of-district tuition rates** and a true
+transportation series; **ENR BCI / RSMeans** for facilities. The three current proxies
+(pensions → wages, and — until the upgrades — the precision items above) are labelled as proxies
+in the app's Methodology tab.
 
 > **Schools matter to the headline.** In most MA communities schools are roughly half the
 > budget, and their fastest-rising lines — **special education (especially out-of-district
@@ -147,13 +160,15 @@ Schedule A before publication.** The mapping uses only public, reproducible seri
 > analogue to the DLS Databank. Teacher salaries are captured in the compensation block.
 
 ### 3.3 Steps/lanes/vacation — a defensibility subtlety
-The ECI is deliberately built to hold employment mix constant and measure the *price* of
-labor. Automatic step/lane and longevity increases are partly *price of a given job* and
-partly *quantity/seniority drift*. To keep the headline an honest **input-price** index, the
-core MCI tracks the ECI wage *price*; step/lane/COLA escalation from MA collective-bargaining
-settlements appears as a **clearly-labeled separate "contractual escalator" overlay**, not
-baked into the headline. Documenting this choice pre-empts the "this isn't really a price
-index" critique.
+Automatic step/lane and longevity increases are partly *price of a given job* and partly
+*quantity/seniority drift*. A pure input-price index should capture only the price part. The
+**ECI** is purpose-built to hold employment mix constant and measure the *price* of labor —
+which is why it is the planned compensation upgrade (§2.3). The current **QCEW** average-weekly-
+wage series is real and key-free but carries some composition drift, so it slightly mixes price
+and quantity; this is disclosed. Under either series, step/lane/COLA escalation from MA
+collective-bargaining settlements can be shown as a **clearly-labeled separate "contractual
+escalator" overlay** rather than baked into the headline — pre-empting the "this isn't really a
+price index" critique.
 
 ---
 
@@ -161,82 +176,84 @@ index" critique.
 
 **Two hard requirements:** (1) municipal-finance data must cover **all 351** MA
 municipalities; (2) every source must be reachable **programmatically** for auto-refresh.
+The as-built stack is **key-free** (one optional free BLS key raises rate limits).
 
-| Layer | Source | Access | R tool | Cadence |
-|---|---|---|---|---|
-| Local actuals (all 351) | DLS Municipal Databank — Schedule A, Cherry Sheet, Levy/Prop 2½ | scripted Excel/CSV download (**no API**) | `httr2` + `readxl`/`fread` | annual |
-| Muni boundaries | MassGIS `TOWNSSURVEY_POLYM` (351 polygons) | ArcGIS REST / GeoJSON | `sf` | static |
-| National basket (wages, benefits, deflators, CPI) | **FRED** (`ECIGVTCOM/WAG/BEN`, `CUURA103SA0`, BEA) | REST API | **`fredr`** | quarterly/monthly |
-| County local-govt wages by NAICS | BLS QCEW open data CSV | CSV-by-FIPS | `httr2`/direct | quarterly |
-| Energy/utilities (MA) | EIA API v2 | REST | `eia` | monthly |
-| Construction cost | NHCCI (`data.transportation.gov/resource/r94d-n4f9.json`) | Socrata JSON | `RSocrata`/`httr2` | quarterly |
+| Layer | Source (as built) | Access | Cadence |
+|---|---|---|---|
+| Compensation — wages | BLS **QCEW** — MA local-government avg weekly wage | open-data CSV by FIPS | annual |
+| Compensation — benefits / other prices | BLS **CPI/PPI** public API (medical, electricity+gas, construction inputs, new vehicles, commodities, services) + headline CPI | REST API (POST), one batched call | monthly |
+| Schools (SPED + transport) | MA **DESE** — RADAR special-ed + per-pupil files | Excel downloads (committed to repo, ~annual) | annual |
+| Roads / construction | FHWA **NHCCI** (`data.transportation.gov/resource/r94d-n4f9.json`) | Socrata JSON | quarterly |
+| Local actuals (all 351) | MA DLS **Schedule A** general-fund expenditures | `dls-gw.dor.state.ma.us` (302 → session download; UA + follow-redirect + cookie jar) | annual |
+| Muni boundaries | MassGIS Municipalities **FeatureServer** → simplified bundled GeoJSON | ArcGIS REST (one-time `build_geo.R`) | static |
+
+Fetch + assembly: `R/fct_fetch_real.R` (base R `system2`/`curl`, `jsonlite`, `data.table`,
+`readxl`, `sf`). No `fredr`/`eia`/`RSocrata`/`httr2` dependency in the shipped path.
 
 ### Known gaps (disclose these — they are part of being defensible)
-1. **DLS has no API** — the only all-351 finance source ships Excel/CSV report files; we
-   maintain a small scheduled downloader and re-validate file URLs each cycle.
-2. **Census govt-finance API is state-level only** — cannot supply per-municipality MA data;
-   the 5-year Census of Governments public-use files are download-only and not annual. DLS
+1. **DLS has no API** — the all-351 finance source ships Excel via a session-cookie'd redirect;
+   we fetch with a small scripted downloader and re-validate the report URL each cycle.
+2. **DESE has no clean bulk API** — the school files are downloaded ~annually and committed to
+   the repo; a missing file auto-falls back to a labelled CPI proxy.
+3. **Census govt-finance API is state-level only** — cannot supply per-municipality MA data; DLS
    remains the sole all-351 annual source.
-3. **GIC health premiums** and **PERAC pensions** are **PDF-only** (no API). Used as
-   context/cross-checks; automating them requires PDF scraping (deferred).
-4. **ENR BCI / RSMeans** are proprietary; the public PPI construction series is the
-   defensible default for the facilities component.
+4. **GIC health premiums** and **PERAC pensions** are **PDF-only** (no API); pensions currently
+   use a wage-based proxy.
+5. **ENR BCI / RSMeans** are proprietary; the public PPI construction series is the defensible
+   default for the facilities component.
+6. **ECI–State&Local** and **EIA MA energy** would sharpen compensation and utilities but were
+   deferred (ECI series IDs are not cleanly resolvable key-free; both are easy upgrades).
 
 ---
 
 ## 5. Architecture (self-updating, reproducible)
 
 ```
-            GitHub Actions (cron: weekly)  ── secrets: FRED/BLS/CENSUS/EIA keys
-                          │
-                          ▼
-   ┌──────────────  targets pipeline (_targets.R)  ──────────────┐
-   │  fredr │ eia │ httr2(QCEW) │ RSocrata(NHCCI) │ DLS download  │ RAW FETCH
-   │                          ▼                                   │
-   │             clean / normalize  (fct_clean.R)                 │
-   │                          ▼                                   │
-   │     compute_mci()  (fct_index.R)  ◀── testthat unit tests    │
-   │                          ▼                                   │
-   │     pin_write(board, "mci_snapshot", versioned = TRUE)       │
-   └──────────────────────────┬───────────────────────────────────┘
-                              ▼
-            pins board (versioned, auditable snapshots
-            + provenance: run ts, git SHA, renv.lock hash)
-                              │  pin_read()  — cached, NO live API calls in-session
-                              ▼
-            golem-style Shiny app (R/ = package)
-            bslib shell + page_navbar
-            ├─ mod_overview     headline index vs 2.5% cap & CPI
-            ├─ mod_components    basket drill-down + contributions
-            ├─ mod_benchmark     actual-vs-MCI reconciliation (peer layer)
-            ├─ mod_map           leaflet choropleth (MassGIS 351)
-            └─ mod_methodology   transparency: sources, weights, formula
+          GitHub Actions (cron: weekly)  ── secret: BLS_KEY (optional)
+                        │
+                        ▼
+   ┌──────────  data-raw/build_snapshot.R  (build_real_snapshot)  ──────────┐
+   │  BLS QCEW (wages) │ BLS CPI/PPI (1 batched call) │ FHWA NHCCI (Socrata) │
+   │  DESE files (committed) │ DLS Schedule A (curl, all 351)                │ RAW FETCH
+   │                              ▼                                          │
+   │            clean / index  (fct_index.R)  ◀── testthat unit tests        │
+   │                              ▼                                          │
+   │            saveRDS → inst/extdata/mci_snapshot.rds  (committed)         │
+   └──────────────────────────────┬───────────────────────────────────────┘
+                                  ▼
+            committed snapshot .rds on GitHub  (raw URL)
+                                  │  load_snapshot(): local-first in dev,
+                                  │  remote raw URL on deploy. NO live API in-session.
+                                  ▼
+            modular Shiny app (R/ = mod_* / fct_* / utils_*)
+            bslib page_navbar (fillable=FALSE, document scroll)
+            ├─ mod_overview     index vs 2.5% cap & real CPI  +  override-votes bars
+            ├─ mod_components   basket trend, relative importance, contributions
+            ├─ mod_map          leaflet choropleth, all 351 (MassGIS + DLS)
+            └─ mod_methodology  transparency: formula, weights, live sources, provenance
 ```
 
 **Principles.**
-- **The Shiny app never calls a live API.** On startup it reads the latest **pinned
-  snapshot**. An upstream outage cannot break the dashboard, sessions are fast, and there are
-  no rate-limit surprises.
-- **All index math is pure functions** (`fct_*`), unit-tested with `testthat` independent of
-  Shiny. The modules only display precomputed results.
-- **Every published index value is traceable** to a git commit + `renv.lock` + data vintages
-  (a provenance JSON travels with each snapshot).
+- **The Shiny app never calls a live data API.** On startup it reads the latest committed
+  snapshot (local file in dev, GitHub raw URL when deployed — fetched once per process). An
+  upstream outage cannot break the dashboard; sessions are fast; no rate-limit surprises.
+- **All index math is pure functions** (`fct_index.R`), unit-tested with `testthat` independent
+  of Shiny. Modules only display precomputed results.
+- **Reproducible & traceable.** `build_snapshot.R` regenerates the index from public sources;
+  each snapshot carries a provenance block; the producing commit is the audit anchor.
 - **No tidyverse.** Data manipulation is `data.table`; tables are `reactable`; charts are
-  `plotly`/`echarts4r`/`dygraphs`; file reads are `data.table::fread`/`readxl`.
+  `plotly`; maps are `leaflet`/`sf`; file reads are `readxl`.
 
-**Framework:** `golem` (app-as-package) for the production build — gives `DESCRIPTION`-pinned
-deps, docs, `R CMD check`, and native testing, the structure an auditor expects. The skeleton
-in this repo uses a plain modular layout mirroring golem conventions (`mod_*`, `fct_*`) so it
-runs without golem installed and can be golem-ized later.
+**Framework (as built):** a plain modular layout (`mod_*`, `fct_*`, `utils_*`) that runs
+without extra scaffolding. *Planned hardening:* `golem` (app-as-package), `renv` lockfile,
+`targets` pipeline, and `pins` versioned board — deferred to Phase 4.
 
-**Auto-update (shinyapps.io target):** GitHub Actions cron (free, serverless, git-versioned)
-restores `renv.lock`, runs `targets::tar_make()`, runs tests, and writes a new versioned
-snapshot. shinyapps.io does **not** run scheduled jobs itself, so the snapshot is published
-where the deployed app can read it without a manual redeploy — either (a) the app reads a
-**`pins::board_url`** pointing at the snapshot the Action commits to the repo (or an S3 board),
-fetched at session startup; or (b) the Action calls `rsconnect::deployApp()` to redeploy with
-the fresh snapshot bundled. Option (a) is preferred — no redeploy, app always serves the latest
-snapshot, and an upstream API outage never breaks the live dashboard. (Note GitHub's 60-day
+**Auto-update (shinyapps.io target):** a GitHub Actions weekly cron runs `build_snapshot.R`,
+runs the tests, and **commits the refreshed `mci_snapshot.rds`**. The deployed app reads that
+committed file from the repo's raw URL at process startup — so it stays current with **no
+redeploy**, and an upstream API outage never breaks the live dashboard. The `.rds` is excluded
+from the shinyapps bundle (`.rscignore`) so the deployed app always uses the remote copy; in
+local dev the bundled file is used so you see your latest build. (Note GitHub's 60-day
 scheduled-workflow dormancy rule — the per-run commit self-heals it.)
 
 ---
@@ -265,20 +282,23 @@ scheduled-workflow dormancy rule — the per-run commit self-heals it.)
 ## 7. Roadmap
 
 **Phase 0 — Research & plan (this document).** ✅
-**Phase 1 — Runnable skeleton on sample data.** ◀ delivered alongside this doc. Modular Shiny
-app, pure `compute_mci()` in data.table, a deterministic sample snapshot, all five tabs, a
-passing test. Lets stakeholders see the shape before any live wiring.
-**Phase 2 — Live national basket.** ✅ DONE (and key-free). `R/fct_fetch_real.R` /
-`build_real_snapshot()` pull real series: **BLS QCEW** (MA local-gov wages), **BLS CPI/PPI**
-(health, utilities, facilities, vehicles, supplies, services), **FHWA NHCCI** (roads). Three
-labelled proxies remain (pensions, SPED, transport). Real MCI: 2015–2024, ~3.6%/yr. Cached to
-`inst/extdata/mci_snapshot.rds`; refreshed weekly by GitHub Actions. (FRED/EIA optional upgrades
-for ECI/MA-energy precision later.)
-**Phase 3 — All-351 expenditure layer.** Build the DLS Schedule A downloader/parser; compute
-real expenditure-share weights; build the reconciliation overlay; add MassGIS choropleth.
-**Phase 4 — Hardening & governance.** `renv` lock, full `testthat` suite, sensitivity tab,
-methodology Quarto doc, GitHub Actions cron + `pins`, independent review, MAPC/MMA/Collins
-engagement.
+**Phase 1 — Runnable skeleton on sample data.** ✅ Modular Shiny app, pure `compute_mci()` in
+data.table, deterministic sample snapshot, passing tests.
+**Phase 2 — Live national basket.** ✅ DONE (key-free; one optional free BLS key for headroom).
+`R/fct_fetch_real.R` / `build_real_snapshot()` pull real series: **BLS QCEW** (MA local-gov
+wages), **BLS CPI/PPI** (benefits, utilities, facilities, vehicles, supplies, services — one
+batched call), **FHWA NHCCI** (roads), plus headline **CPI** as the reference line. Real MCI:
+2015–2024, ~3.8%/yr. Cached to `inst/extdata/mci_snapshot.rds`; refreshed weekly.
+**Phase 2.5 — Schools + override evidence.** ✅ **MA DESE** special-education and student-
+transportation per-pupil series (real, replacing CPI proxies); **Prop 2½ override-votes** chart
+on the Overview tab (statewide, by year — the squeeze made visible).
+**Phase 3 — All-351 expenditure layer + map.** ✅ DONE. DLS **Schedule A** downloader (all 351,
+2 fiscal years) → per-municipality spending-growth-vs-MCI; **MassGIS** choropleth (`mod_map`,
+349/351 joined). *Remaining within this phase:* derive **real expenditure-share weights** from
+DLS object-level data (weights are still documented defaults).
+**Phase 4 — Hardening & governance.** Real DLS weights; ECI/EIA/ENR precision upgrades; `renv`
+lock + `targets` + `pins` + `golem`; sensitivity tab; independent review; MAPC/MMA/Collins
+engagement; governance home.
 
 ---
 
@@ -287,7 +307,7 @@ engagement.
    the app exposes base year as a global control: the index recomputes live from the published
    formula at whatever base the user picks. This converts the "you cherry-picked the base year"
    critique into a transparency feature. Default base = the earliest available year.
-2. **Scope — all 351 municipalities.** Confirmed: the headline index is a *single statewide
+2. **Scope — all 351 MA municipalities.** The headline index is a *single statewide
    curve* (input prices — ECI, CPI, NHCCI — are national/regional, not per-town), so there is
    no methodological cost to covering the whole state. Per-municipality variation lives only in
    the Layer B reconciliation, and DLS covers all 351. The "peer set" framing is dropped; the

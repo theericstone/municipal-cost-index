@@ -28,7 +28,7 @@ mod_map_server <- function(id, snap) {
   moduleServer(id, function(input, output, session) {
     geo <- reactive({
       path <- "inst/extdata/ma_towns.geojson"
-      validate(need(file.exists(path), "Boundary file not found."))
+      shiny::validate(shiny::need(file.exists(path), "Boundary file not found."))
       g <- sf::st_read(path, quiet = TRUE)
       g$key <- toupper(trimws(g$TOWN))
       g$key[g$key == "MANCHESTER-BY-THE-SEA"] <- "MANCHESTER"   # DLS name alias
@@ -37,7 +37,7 @@ mod_map_server <- function(id, snap) {
 
     output$map <- renderLeaflet({
       m <- snap()$munis
-      validate(need(!is.null(m) && nrow(as.data.table(m)) > 0,
+      shiny::validate(shiny::need(!is.null(m) && nrow(as.data.table(m)) > 0,
                     "Municipal spending data not available in this snapshot."))
       m <- as.data.table(m)[, key := toupper(trimws(muni))]
       g <- merge(geo(), m[, .(key, muni, growth_pct, gap_pts)], by = "key", all.x = TRUE)

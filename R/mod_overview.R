@@ -120,9 +120,10 @@ mod_overview_server <- function(id, snap) {
 
     output$overrides <- renderPlotly({
       o <- snap()$overrides
-      validate(need(!is.null(o) && nrow(as.data.table(o)) > 0 &&
-                    all(c("year", "passed", "failed") %in% names(as.data.table(o))),
-                    "Override data not available in this snapshot."))
+      shiny::validate(shiny::need(
+        !is.null(o) && nrow(as.data.table(o)) > 0 &&
+          all(c("year", "passed", "failed") %in% names(as.data.table(o))),
+        "Override data not available in this snapshot."))
       o <- as.data.frame(o)
       plot_ly(x = o$year, y = o$passed, type = "bar", name = "Passed",
               marker = list(color = "#1f7a4d")) |>
